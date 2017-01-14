@@ -9,18 +9,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.min.js"></script>
   <script src="./StartAudioContext.js"></script>
   <script src="./Interface.js"></script>
+  <link rel="stylesheet" href="./examples.css">
   <link rel="stylesheet" href="./main.css">
 </head>
 <body>
-  <div id="daw-container">
-    <canvas id="daw">
-    </canvas>
-    <div id="bar"></div>
-  </div>
-  <div id="images">
-    <img src="./images/ambient-loop.png" id="loop">
+  <div id="Content">
+    <div id="daw-container">
+      <canvas id="daw">
+      </canvas>
+      <div id="bar"></div>
+    </div>
+    <div id="images">
+      <img src="./images/ambient-loop.png" id="loop">
+    </div>
   </div>
   <script>
+    var started = false;
     Tone.Transport.bpm.value = 109.23;
 
     var loop = new Tone.Player({
@@ -33,6 +37,7 @@
     Tone.Transport.loopEnd = "4m";
 
     Tone.Buffer.on('load', function(){
+      started = true;
       Tone.Transport.start("+0.1");
     });
   </script>
