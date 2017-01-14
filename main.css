@@ -1,0 +1,28 @@
+#daw-container {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  width: 100%;
+  height: 100px;
+  position: relative;
+}
+#daw {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+#bar {
+  width: 2px;
+  height: 94%;
+  position: absolute;
+  top: 3%;
+  left: 0%;
+  background-color: black;
+}
+
+#images {
+  overflow: hidden;
+  height: 0px;
+  width: 100%;
+}

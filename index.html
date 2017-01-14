@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Geometry of Now</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.min.js"></script>
+  <script src="./StartAudioContext.js"></script>
+  <script src="./Interface.js"></script>
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+  <div id="daw-container">
+    <canvas id="daw">
+    </canvas>
+    <div id="bar"></div>
+  </div>
+  <div id="images">
+    <img src="./images/ambient-loop.png" id="loop">
+  </div>
+  <script>
+    Tone.Transport.bpm.value = 109.23;
+
+    var loop = new Tone.Player({
+      url: "./sounds/ambient-loop.mp3",
+      loop: true
+    }).toMaster().sync().start(0);
+
+    Tone.Transport.loop = true;
+    Tone.Transport.loopStart = "0m";
+    Tone.Transport.loopEnd = "4m";
+
+    Tone.Buffer.on('load', function(){
+      Tone.Transport.start("+0.1");
+    });
+  </script>
+  <script id="GUI">
+    $(function(){
+      var dragging = false;
+
+      window.slider = new Interface.Slider({
+        max : Tone.Transport.loopEnd,
+        start : function(){
+          dragging = true;
+          if (started){
+            Tone.Transport.pause();
+          }
+        },
+        end : function(){
+          dragging = false;
+          if (started){
+            Tone.Transport.start("+0.1");
+          }
+        },
+        drag : function(val){
+          Tone.Transport.seconds = val;
+        }
+      });
+
+      function loop(){
+        requestAnimationFrame(loop);
+        if (!dragging){
+          slider.value(Tone.Transport.seconds);
+        }
+        var progress = Tone.Transport.seconds / Tone.Transport.loopEnd;
+        $("#bar").css("left", (progress * 100).toFixed(2) + "%");
+      }
+      loop();
+    });
+
+    var loadedPromise = new Promise(function(done){
+      Tone.Buffer.on("load", done);
+    });
+
+    //when the images have loaded
+    $(window).on("load", function(){
+      // draw the canvas to represent the 3 tracks
+      window.context = $("#daw").get(0).getContext("2d");
+      // size the canvas
+      function draw(){
+        context.canvas.width = $(window).width() * 2;
+        context.canvas.height = $(window).height() * 2;
+        var barHeight = context.canvas.height;
+        var barMargin = 40;
+        var width = context.canvas.width;
+        var totalSeconds = Tone.Transport.loopEnd;
+        //seconds to width pixel conversion
+        function s2w(seconds){
+          return (seconds / totalSeconds) * width;
+        }
+        function drawBuffer(img, duration, yOffset, startTime, imgOffset){
+          imgOffset = imgOffset || 0;
+          imgLeft = img.width * imgOffset;
+          imgWidth = img.width * (1 - imgOffset);
+          yOffset *= barHeight;
+          imgPixels = s2w(duration);
+          for (var i = startTime; i < totalSeconds; i+=duration){
+            context.drawImage(img, 
+              imgLeft, 0, imgWidth, img.height,
+              s2w(i), yOffset + barMargin, imgPixels * (1 - imgOffset), 
+              barHeight - barMargin * 2)
+            context.strokeRect(s2w(i), yOffset + barMargin, imgPixels, 
+              barHeight - barMargin * 2)
+          }
+        }
+        context.strokeStyle = "white";
+        context.lineWidth = 3;
+        // draw the kick
+        drawBuffer($("#loop").get(0), loop.buffer.duration, 0, 0);
+      }
+      $(window).resize(draw);
+      //draw it for the first time when it's loaded
+      loadedPromise.then(draw);
+    });
+  </script>
+</body>
+</html>
