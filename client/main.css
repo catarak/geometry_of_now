@@ -1,0 +1,73 @@
+body {
+  font-family: sans-serif;
+}
+
+#daw-container {
+  width: 100%;
+  height: 100px;
+  position: relative;
+}
+#daw {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+#bar {
+  width: 2px;
+  height: 94%;
+  position: absolute;
+  top: 3%;
+  left: 0%;
+  background-color: black;
+}
+
+#images {
+  overflow: hidden;
+  height: 0px;
+  width: 100%;
+}
+
+.samples-label {
+  text-align: center;
+}
+
+.loop-controls, .oneshot-controls {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.loop-record, .loop-clear {
+  font-size: 1.5rem;
+}
+
+.button {
+  flex: 1;
+  min-width: 50%;
+  height: 15vw;
+}
+
+.one {
+  background: #FF0063;
+}
+
+.two {
+  background: #3A86FF;
+}
+
+.three {
+  background: #833AEC;
+}
+
+.four {
+  background: #F17105;
+}
+
+.effects {
+  padding: 20px;
+}
+.effect-param {
+  width: 100%;
+  margin: 20px 0;
+}

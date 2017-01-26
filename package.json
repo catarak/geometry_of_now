@@ -1,0 +1,30 @@
+{
+  "name": "geometry_of_now",
+  "version": "0.0.1",
+  "description": "For the festival of the same name",
+  "main": "server/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/catarak/geometry_of_now.git"
+  },
+  "keywords": [
+    "sound",
+    "generative"
+  ],
+  "author": "Cassie Tarakajian",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/catarak/geometry_of_now/issues"
+  },
+  "homepage": "https://github.com/catarak/geometry_of_now#readme",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "express": "^4.14.0",
+    "socket.io": "^1.7.2",
+    "twitter": "^1.7.0"
+  }
+}

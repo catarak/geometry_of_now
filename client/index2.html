@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Geometry of Now</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
   <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.min.js"></script>
   <script src="./StartAudioContext.js"></script>
@@ -20,17 +21,39 @@
       <div id="bar"></div>
     </div>
     <div id="images">
-      <img src="./images/ambient-loop.png" id="loop">
+      <img src="./images/kick-loop.png" id="loop">
+    </div>
+    <div id="tweets">
     </div>
   </div>
   <script>
-    var started = false;
-    Tone.Transport.bpm.value = 109.23;
+    var reverb = new Tone.Freeverb({
+      roomSize: 0.9,
+      dampening: 10000
+    }).toMaster();
+    var autoPanner = new Tone.AutoPanner("4n").connect(reverb).start();
+    var hiHat = new Tone.Player({
+      url: "./sounds/Boss DR-110_/110CHH.WAV"
+    }).connect(autoPanner);
+    var socket = io();
+    socket.on("tweet", function(tweet) {
+      hiHat.start(0);
+      var newP = document.createElement("p");
+      $(newP).text(tweet)
+      $("#tweets").append($(newP));
+    });
 
-    var loop = new Tone.Player({
-      url: "./sounds/ambient-loop.mp3",
+    //Samples
+
+    var sampleNode = new Tone.Gain().toMaster();
+
+    var drumLoop = new Tone.Player({
+      url: "./sounds/kick_loop.wav",
       loop: true
-    }).toMaster().sync().start(0);
+    }).connect(sampleNode).sync().start(0);
+
+    var started = false;
+    Tone.Transport.bpm.value = 100;
 
     Tone.Transport.loop = true;
     Tone.Transport.loopStart = "0m";
@@ -40,12 +63,18 @@
       started = true;
       Tone.Transport.start("+0.1");
     });
+
+    Tone.Transport.on("loopEnd", function() {
+      Tone.Transport.cancel();
+      drumLoop.start(0);
+    });
   </script>
   <script id="GUI">
     $(function(){
       var dragging = false;
 
       window.slider = new Interface.Slider({
+        parent: $("#slider-container"),
         max : Tone.Transport.loopEnd,
         start : function(){
           dragging = true;
@@ -113,7 +142,7 @@
         context.strokeStyle = "white";
         context.lineWidth = 3;
         // draw the kick
-        drawBuffer($("#loop").get(0), loop.buffer.duration, 0, 0);
+        drawBuffer($("#loop").get(0), drumLoop.buffer.duration, 0, 0);
       }
       $(window).resize(draw);
       //draw it for the first time when it's loaded

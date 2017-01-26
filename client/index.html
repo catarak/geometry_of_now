@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Geometry of Now</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
+  <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.min.js"></script>
+  <script src="./StartAudioContext.js"></script>
+  <script src="./Interface.js"></script>
+  <link rel="stylesheet" href="./examples.css">
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+  <div id="Content">
+    <div id="daw-container">
+      <canvas id="daw">
+      </canvas>
+      <div id="bar"></div>
+    </div>
+    <div id="images">
+      <img src="./images/kick-loop.png" id="loop">
+    </div>
+    <!-- <div id="slider-container">
+    </div> -->
+    <div class="loop-controls">
+      <button id="loop-record" class="button loop-record">
+        Start Recording
+      </button>
+      <button id="loop-clear" class="button loop-clear">
+        Clear
+      </button>
+    </div>
+    <div class="oneshot-controls">
+      <button class="button one" id="button-one">
+      </button>
+      <button class="button two" id="button-two">
+      </button>
+      <button class="button three" id="button-three">
+      </button>
+      <button class="button four" id="button-four">
+      </button>
+    </div>
+    <div class="effects">
+      <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateChorus(value)">
+      <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateCheby(value)">
+      <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateReverb(value)">
+    </div>
+  </div>
+  <script>
+    // var reverb = new Tone.Freeverb({
+    //   roomSize: 0.9,
+    //   dampening: 10000
+    // }).toMaster();
+    // var autoPanner = new Tone.AutoPanner("4n").connect(reverb).start();
+    // var hiHat = new Tone.Player({
+    //   url: "./sounds/Boss DR-110_/110CHH.WAV"
+    // }).connect(autoPanner);
+    // var socket = io();
+    // socket.on("tweet", function(tweet) {
+
+    //   hiHat.start(0);
+    //   console.log(tweet);
+    // });
+
+    //Samples
+
+    var sampleNode = new Tone.Gain().toMaster();
+
+    var sampleOne = new Tone.Player({
+      url: "./sounds/Boss DR-110_/110CLP.WAV",
+    }).connect(sampleNode).sync();
+
+    var sampleTwo = new Tone.Player({
+      url: "./sounds/Boss DR-110_/110SNR.WAV",
+    }).connect(sampleNode).sync();
+
+    var sampleThree = new Tone.Player({
+      url: "./sounds/oneshot.wav"
+    }).connect(sampleNode).sync();
+
+    var sampleFour = new Tone.Player({
+      url: "./sounds/oneshot2.wav"
+    }).connect(sampleNode).sync();
+
+    var drumLoop = new Tone.Player({
+      url: "./sounds/kick_loop.wav",
+      loop: true
+    }).connect(sampleNode).sync().start(0);
+
+    //connect all samples to effects
+    var chorusSend = sampleNode.send("chorus", -Infinity);
+    var chebySend = sampleNode.send("cheby", -Infinity);
+    var reverbSend = sampleNode.send("reverb", -Infinity);
+
+    var chorus = new Tone.Chorus()
+      .receive("chorus")
+      .toMaster();
+    var cheby = new Tone.Chebyshev(50)
+      .receive("cheby")
+      .toMaster();
+    var reverb = new Tone.Freeverb(0.9, 4000)
+      .receive("reverb")
+      .toMaster();
+
+    //Effects
+
+    var loopRecord = false;
+    var started = false;
+    Tone.Transport.bpm.value = 100;
+
+    Tone.Transport.loop = true;
+    Tone.Transport.loopStart = "0m";
+    Tone.Transport.loopEnd = "4m";
+
+    Tone.Buffer.on('load', function(){
+      started = true;
+      Tone.Transport.start("+0.1");
+    });
+
+    Tone.Transport.on("loopEnd", function() {
+      if (!loopRecord) {
+        Tone.Transport.cancel();
+        drumLoop.start(0);
+      }
+    });
+
+    function updateChorus(value) {
+      chorusSend.gain.value = value;
+    }
+
+    function updateCheby(value) {
+      chebySend.gain.value = value;
+    }
+
+    function updateReverb(value) {
+      reverbSend.gain.value = value;
+    }
+  </script>
+  <script id="GUI">
+    $(function(){
+      var dragging = false;
+
+      window.slider = new Interface.Slider({
+        parent: $("#slider-container"),
+        max : Tone.Transport.loopEnd,
+        start : function(){
+          dragging = true;
+          if (started){
+            Tone.Transport.pause();
+          }
+        },
+        end : function(){
+          dragging = false;
+          if (started){
+            Tone.Transport.start("+0.1");
+          }
+        },
+        drag : function(val){
+          Tone.Transport.seconds = val;
+        }
+      });
+
+      function loop(){
+        requestAnimationFrame(loop);
+        if (!dragging){
+          slider.value(Tone.Transport.seconds);
+        }
+        var progress = Tone.Transport.seconds / Tone.Transport.loopEnd;
+        $("#bar").css("left", (progress * 100).toFixed(2) + "%");
+      }
+      loop();
+
+      $("#button-one").click(function() {
+        sampleOne.start();
+      });
+      $("#button-two").click(function() {
+        sampleTwo.start();
+      });
+      $("#button-three").click(function() {
+        sampleThree.start();
+      });
+      $("#button-four").click(function() {
+        sampleFour.start();
+      });
+
+      $("#loop-record").click(function() {
+        if (loopRecord) {
+          loopRecord = false;
+          $(this).html("Start Recording");
+        } else {
+          loopRecord = true;
+          $(this).html("Stop Recording");
+        }
+      });
+
+      $("#loop-clear").click(function() {
+        Tone.Transport.cancel();
+        drumLoop.start(0);
+      });
+    });
+
+    var loadedPromise = new Promise(function(done){
+      Tone.Buffer.on("load", done);
+    });
+
+    //when the images have loaded
+    $(window).on("load", function(){
+      // draw the canvas to represent the 3 tracks
+      window.context = $("#daw").get(0).getContext("2d");
+      // size the canvas
+      function draw(){
+        context.canvas.width = $(window).width() * 2;
+        context.canvas.height = $(window).height() * 2;
+        var barHeight = context.canvas.height;
+        var barMargin = 40;
+        var width = context.canvas.width;
+        var totalSeconds = Tone.Transport.loopEnd;
+        //seconds to width pixel conversion
+        function s2w(seconds){
+          return (seconds / totalSeconds) * width;
+        }
+        function drawBuffer(img, duration, yOffset, startTime, imgOffset){
+          imgOffset = imgOffset || 0;
+          imgLeft = img.width * imgOffset;
+          imgWidth = img.width * (1 - imgOffset);
+          yOffset *= barHeight;
+          imgPixels = s2w(duration);
+          for (var i = startTime; i < totalSeconds; i+=duration){
+            context.drawImage(img, 
+              imgLeft, 0, imgWidth, img.height,
+              s2w(i), yOffset + barMargin, imgPixels * (1 - imgOffset), 
+              barHeight - barMargin * 2)
+            context.strokeRect(s2w(i), yOffset + barMargin, imgPixels, 
+              barHeight - barMargin * 2)
+          }
+        }
+        context.strokeStyle = "white";
+        context.lineWidth = 3;
+        // draw the kick
+        drawBuffer($("#loop").get(0), drumLoop.buffer.duration, 0, 0);
+      }
+      $(window).resize(draw);
+      //draw it for the first time when it's loaded
+      loadedPromise.then(draw);
+    });
+  </script>
+</body>
+</html>
