@@ -46,6 +46,7 @@ body {
   flex: 1;
   min-width: 50%;
   height: 15vw;
+  max-height: 140px;
 }
 
 .one {
