@@ -2,13 +2,22 @@ var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
+var path = require('path');
 
 app.use(express.static('client'));
+
+app.get('/', function(req, res) {
+    res.sendFile(path.join(__dirname + '/../client/index.html'));
+});
+
+app.get('/twitter', function(req, res) {
+    res.sendFile(path.join(__dirname + '/../client/index2.html'));
+});
 
 io.on('connection', function(socket){
   console.log('a user connected');
 });
-server.listen(3000);
+server.listen(3001);
 
 
 
