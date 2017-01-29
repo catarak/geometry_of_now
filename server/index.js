@@ -14,6 +14,10 @@ app.get('/twitter', function(req, res) {
     res.sendFile(path.join(__dirname + '/../client/index2.html'));
 });
 
+app.get('/sequencer', function(req, res) {
+    res.sendFile(path.join(__dirname + '/../client/sequencer.html'));
+});
+
 io.on('connection', function(socket){
   console.log('a user connected');
 });

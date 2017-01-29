@@ -72,3 +72,27 @@ body {
   width: 100%;
   margin: 20px 0;
 }
+
+.row {
+  display: flex;
+}
+
+.pad-state {
+  display: none;
+}
+
+.pad {
+  height: 50px;
+  width: 50px;
+  border: 1px solid black;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.pad:hover {
+  background-color: #ddd;
+}
+
+.pad-state:checked + .pad {
+  background-color: red;
+}
