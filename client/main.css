@@ -96,3 +96,43 @@ body {
 .pad-state:checked + .pad {
   background-color: red;
 }
+
+.pad-state.current-step:checked + .pad {
+  background-image: radial-gradient(
+    gray,
+    red
+  );
+}
+
+.pad-state.current-step + .pad {
+  background-image: radial-gradient(
+    gray,
+    white
+  );
+}
+
+.controls {
+  padding: 10px;
+}
+
+.start-stop {
+  padding: 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-size: 1.2em;
+}
+
+.bpm-label {
+  font-size: 1.2em;
+  margin-left: 30px;
+}
+
+.bpm-input {
+  font-size: 1.2em;
+  padding: 20px 10px;
+  width: 60px;
+}
+
+.hidden {
+  display: none;
+}

@@ -15,7 +15,13 @@
 </head>
 <body>
   <div id="Content">
-    <div id="sequencer-container">
+    <div id="sequencer-container" class="sequencer-container">
+    </div>
+    <div id="controls" class="controls">
+      <button class="start-stop" id="start">Start</button>
+      <button class="start-stop hidden" id="stop">Stop</button>
+      <label class="bpm-label" for="bpm-input">BPM</label>
+      <input value="120" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
     </div>
   </div>
   <script>
@@ -31,6 +37,8 @@
           button.type = "checkbox";
           button.id = "button-" + i + "-" + j;
           button.className = "pad-state";
+          $(button).data("row", i);
+          $(button).data("column", j);
           label.htmlFor = button.id;
           label.className = "pad";
           $(rowContainer).append($(button));
@@ -55,6 +63,12 @@
     var rows = 4;
 
     var sequence = new Tone.Sequence(function(time, column) {
+      $(".pad-state").removeClass("current-step");
+      $(".pad-state").each(function(index) {
+        if ($(this).data("column") === column) {
+          $(this).addClass("current-step");
+        }
+      });
       sampleNames.forEach(function(sampleName, row) {
         if ($("#button-" + row + "-" + column + ":checked").length > 0) {
           sequencerPlayer.start(sampleName, time, 0, "32n", 0, 1);
@@ -62,7 +76,7 @@
       });
     }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "16n");
 
-    Tone.Transport.bpm = 120;
+    Tone.Transport.bpm.value = 120;
     Tone.Transport.start();
 
     
@@ -70,7 +84,22 @@
   <script id="GUI">
     $(function(){
       renderGrid(rows, columns);
-    sequence.start();
+
+      $("#start").click(function() {
+        $(this).addClass("hidden");
+        $("#stop").removeClass("hidden");
+        sequence.start();
+      });
+
+      $("#stop").click(function() {
+        $(this).addClass("hidden");
+        $("#start").removeClass("hidden");
+        sequence.stop();
+      });
+
+      $("#bpm-input").change(function() {
+        Tone.Transport.bpm.value = parseInt($(this).val());
+      });
     });
   </script>
 </body>
