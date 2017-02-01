@@ -136,3 +136,8 @@ body {
 .hidden {
   display: none;
 }
+
+.drag-and-drop.show {
+  cursor: copy;
+  border: 2px solid #333;
+}
