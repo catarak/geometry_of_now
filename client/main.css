@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: sans-serif;
 }
@@ -74,7 +78,9 @@ body {
 }
 
 .row {
-  display: flex;
+  display: inline-block;
+  border: 2px solid white;
+  font-size: 0;
 }
 
 .pad-state {
@@ -87,6 +93,11 @@ body {
   border: 1px solid black;
   display: inline-block;
   cursor: pointer;
+  margin-left: 4px;
+}
+
+.row .pad:first-of-type {
+  margin-left: 0;
 }
 
 .pad:hover {
@@ -130,7 +141,7 @@ body {
 .bpm-input {
   font-size: 1.2em;
   padding: 20px 10px;
-  width: 60px;
+  width: 80px;
 }
 
 .hidden {
