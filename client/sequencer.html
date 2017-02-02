@@ -50,16 +50,16 @@
 
     var sequencerPlayer = new Tone.MultiPlayer({
       urls: {
-        "hi-hat": "./sounds/Boss DR-110_/110CHH.WAV",
-        "kick": "./sounds/Boss DR-110_/110KIK.WAV",
-        "snare": "./sounds/Boss DR-110_/110SNR.WAV",
-        "clap": "./sounds/Boss DR-110_/110CLP.WAV",
+        "0": "./sounds/Boss DR-110_/110CHH.WAV",
+        "1": "./sounds/Boss DR-110_/110KIK.WAV",
+        "2": "./sounds/Boss DR-110_/110SNR.WAV",
+        "3": "./sounds/Boss DR-110_/110CLP.WAV",
       },
       volume : -10,
       fadeOut : 0.1,
     }).toMaster();
 
-    var sampleNames = ["hi-hat", "kick", "snare", "clap"];
+    var sampleNames = ["0", "1", "2", "3"];
     var columns = 16;
     var rows = 4;
 

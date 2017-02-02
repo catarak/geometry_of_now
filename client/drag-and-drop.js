@@ -63,22 +63,23 @@
         var data = fileEvent.target.result;
 
         Tone.context.decodeAudioData(data, function(buffer) {
+          sequencerPlayer.buffers.get("" + rowNumber).set(buffer);
 
-          if(
-            window[filenames[i]] !== undefined ||
-            filenames[i] === 'undefined' ||
-            filenames[i].match(/^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|null|this|true|void|with|break|catch|class|const|false|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/)
-          ) {
-            filenames[i] = 'sampleupload_' + (filenames[i] || (new Date()).getTime());
-          }
+          // if(
+          //   window[filenames[i]] !== undefined ||
+          //   filenames[i] === 'undefined' ||
+          //   filenames[i].match(/^(?:do|if|in|for|let|new|try|var|case|else|enum|eval|null|this|true|void|with|break|catch|class|const|false|super|throw|while|yield|delete|export|import|public|return|static|switch|typeof|default|extends|finally|package|private|continue|debugger|function|arguments|interface|protected|implements|instanceof)$/)
+          // ) {
+          //   filenames[i] = 'sampleupload_' + (filenames[i] || (new Date()).getTime());
+          // }
 
-          window[filenames[i]] = buffer;
+          // window[filenames[i]] = buffer;
 
-          if(filenames[i].match(/\/|\-|\~|\%|\,|\.|\;|\:|\!|\@|\#|\^|\&|\*|\(|\)|\\|\ /)) {
-            console.log('The AudioBuffer `window["' + filenames[i] + '"]` is ready for you to use.');
-          } else {
-            console.log('The AudioBuffer `' + filenames[i] + '` is ready for you to use.');
-          }
+          // if(filenames[i].match(/\/|\-|\~|\%|\,|\.|\;|\:|\!|\@|\#|\^|\&|\*|\(|\)|\\|\ /)) {
+          //   console.log('The AudioBuffer `window["' + filenames[i] + '"]` is ready for you to use.');
+          // } else {
+          //   console.log('The AudioBuffer `' + filenames[i] + '` is ready for you to use.');
+          // }
 
         }, function(e) {
           console.log('There was an error decoding your file (make sure it\'s a .wav file!)');
