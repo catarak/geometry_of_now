@@ -5,6 +5,16 @@
   var dragAndDrop = document.querySelector('.drag-and-drop');
   var dragging = {};
 
+  function _arrayBufferToBase64( buffer ) {
+    var binary = '';
+    var bytes = new Uint8Array( buffer );
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode( bytes[ i ] );
+    }
+    return window.btoa( binary );
+  }
+
   function dragOver(e) {
     e.stopPropagation();
     e.preventDefault();
@@ -57,10 +67,24 @@
     droppedFiles.forEach(function(item, i){
 
       readers.push( new FileReader() );
-      filenames.push( droppedFiles[i].name.replace('.wav', '') );
+      // filenames.push( droppedFiles[i].name.replace('.wav', '') );
+      console.log(item);
 
       readers[i].onload = function(fileEvent) {
         var data = fileEvent.target.result;
+
+        var fileString = _arrayBufferToBase64(data);
+        $.post('/sounds', {
+          file: fileString,
+          filename: item.name
+        });
+        
+        // var xhr = new XMLHttpRequest;
+        // xhr.open("POST", '/sounds', true);
+        // xhr.send(data);
+        // xhr.onload = function(e) {
+        //   console.log(e);
+        // };
 
         Tone.context.decodeAudioData(data, function(buffer) {
           sequencerPlayer.buffers.get("" + rowNumber).set(buffer);
