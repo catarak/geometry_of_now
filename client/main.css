@@ -148,7 +148,18 @@ body {
   display: none;
 }
 
+.loop-container {
+  display: flex;
+  align-items: center;
+}
+
+.drag-container {
+  width: 50%;
+  height: 50px;
+  border: 2px solid #000;
+}
+
 .drag-and-drop.show {
   cursor: copy;
-  border: 2px solid #333;
+  border: 2px solid #aaa;
 }

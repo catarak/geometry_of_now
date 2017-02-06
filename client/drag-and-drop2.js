@@ -3,7 +3,7 @@
   // and adopted from https://github.com/kylestetz/lissajous/blob/master/environment/drag-and-drop.js
 
   var dragAndDrop = document.querySelector('.drag-and-drop');
-  var dragging = {};
+  var dragging = false;
 
   function _arrayBufferToBase64( buffer ) {
     var binary = '';
@@ -18,12 +18,10 @@
   function dragOver(e) {
     e.stopPropagation();
     e.preventDefault();
-    var dragAndDrop = $(e.target).closest('.drag-and-drop');
-    var rowNumber = dragAndDrop.data("row");
-    console.log("dragOver for row " + rowNumber);
-    if(!dragging[rowNumber]) {
+    var dragAndDrop = $(e.target);
+    if(!dragging) {
       dragAndDrop.addClass('show');
-      dragging[rowNumber] = true;
+      dragging = true;
     }
     return false;
   }
@@ -31,33 +29,27 @@
   function dragEnd(e) {
       e.stopPropagation();
       e.preventDefault();
-      var dragAndDrop = $(e.target).closest('.drag-and-drop');
-      var rowNumber = dragAndDrop.data("row");
-      console.log("dragEnd for row " + rowNumber);
+      var dragAndDrop = $(e.target);
       dragAndDrop.removeClass('show');
-      dragging[rowNumber] = false;
+      dragging = false;
       return false;
   }
 
   function dragLeave(e) {
     e.stopPropagation();
     e.preventDefault();
-    var dragAndDrop = $(e.target).closest('.drag-and-drop');
-    var rowNumber = dragAndDrop.data("row");
-    console.log("dragLeave for row " + rowNumber);
+    var dragAndDrop = $(e.target);
     dragAndDrop.removeClass('show');
-    dragging[rowNumber] = false;
+    dragging = false;
     return false;
   }
 
   function dropEvent(e) {
     e.stopPropagation();
     e.preventDefault();
-    var dragAndDrop = $(e.target).closest('.drag-and-drop');
-    var rowNumber = dragAndDrop.data("row");
-    console.log("dropEvent for row " + rowNumber);
+    var dragAndDrop = $(e.target);
     dragAndDrop.removeClass('show');
-    dragging[rowNumber] = false;
+    dragging= false;
 
     var droppedFiles = e.dataTransfer.files;
     var readers = [];
@@ -68,7 +60,6 @@
 
       readers.push( new FileReader() );
       // filenames.push( droppedFiles[i].name.replace('.wav', '') );
-      console.log(item);
 
       readers[i].onload = function(fileEvent) {
         var data = fileEvent.target.result;
@@ -87,12 +78,7 @@
         // };
 
         Tone.context.decodeAudioData(data, function(buffer) {
-          if (sequencerPlayer) {
-            sequencerPlayer.buffers.get("" + rowNumber).set(buffer);
-          }
-          if (beatgridSample) {
-            beatgridSample.buffer.set(buffer);
-          }
+          beatgridSample.buffer.set(buffer);
 
           // if(
           //   window[filenames[i]] !== undefined ||
@@ -119,14 +105,11 @@
     });
   }
 $(function() {
-  var rows = document.getElementsByClassName("row");
-  Array.prototype.forEach.call(rows, function(row) {
-    console.log('adding row event listener for ', row);
-    row.addEventListener('dragover', dragOver, false);
-    row.addEventListener('dragend', dragEnd, false);
-    row.addEventListener('dragleave', dragLeave, false);
-    row.addEventListener('drop', dropEvent, false);
-  });
+  var loop = document.getElementById("drag-container");
+  loop.addEventListener('dragover', dragOver, false);
+  loop.addEventListener('dragend', dragEnd, false);
+  loop.addEventListener('dragleave', dragLeave, false);
+  loop.addEventListener('drop', dropEvent, false);
 });
 //want to add thse event listeners to each row. can only do this after the rows have been rendered.
 // window.addEventListener('dragover', dragOver, false);

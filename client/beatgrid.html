@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Geometry of Now</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
+  <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.min.js"></script>
+  <script src="./StartAudioContext.js"></script>
+  <script src="./Interface.js"></script>
+  <link rel="stylesheet" href="./examples.css">
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+  <div id="Content">
+    <div id="loop-container" class="loop-container">
+      <div id="drag-container" class="drag-container drag-and-drop">
+        <p>Drag a sample here.</p>
+      </div>
+      <button><</button>
+      <span>4</span>
+      <button>></button>
+    </div>
+    <div id="sequencer-container" class="sequencer-container">
+    </div>
+    <div id="controls" class="controls">
+      <button class="start-stop" id="start">Start</button>
+      <button class="start-stop hidden" id="stop">Stop</button>
+      <label class="bpm-label" for="bpm-input">BPM</label>
+      <input value="120" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+    </div>
+  </div>
+  <script>
+    function renderGrid(rows, columns) {
+      for (var i = 0; i < rows; i++) {
+        var rowContainer = document.createElement("div");
+        rowContainer.className = "row";
+        rowContainer.id = "row-" + i;
+        rowContainer.setAttribute("data-row", i);
+        $("#sequencer-container").append($(rowContainer));
+        for (var j = 0; j < columns; j++) {
+          var button = document.createElement("input");
+          var label = document.createElement("label");
+          button.type = "checkbox";
+          button.id = "button-" + i + "-" + j;
+          button.className = "pad-state";
+          $(button).data("row", i);
+          $(button).data("column", j);
+          label.htmlFor = button.id;
+          label.className = "pad";
+          $(rowContainer).append($(button));
+          $(rowContainer).append($(label));
+        }
+      }
+    }
+
+    var env = new Tone.AmplitudeEnvelope({
+      "attack": 0.1,
+      "decay": 0,
+      "sustain": 1,
+      "release": 0.3 
+    }).toMaster();
+    env.attackCurve  = "exponential";
+    env.releaseCurve  = "exponential";
+
+    // var env = new Tone.AmplitudeEnvelope().toMaster();
+
+    var beatgridSample = new Tone.Player({
+      url: "./sounds/synth_loop.wav",
+      retrigger: false
+    }).sync().toMaster();
+
+    var sampleNames = ["0", "1", "2", "3"];
+    var columns = 16;
+    var rows = 4;
+
+    var sequence = new Tone.Sequence(function(time, column) {
+      $(".pad-state").removeClass("current-step");
+      $(".pad-state").each(function(index) {
+        if ($(this).data("column") === column) {
+          $(this).addClass("current-step");
+          if ($(this).prop('checked') == true) {
+            var row = $(this).data('row');
+            beatgridSample.start(time, "0:" + row + ":0", "16n");
+            env.triggerAttackRelease("16n - 64n", time);
+          }
+        }
+      });
+    }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "16n");
+
+    Tone.Transport.bpm.value = 100;
+    Tone.Transport.start();
+
+    
+  </script>
+  <script id="GUI">
+    $(function(){
+      renderGrid(rows, columns);
+
+      $("#start").click(function() {
+        $(this).addClass("hidden");
+        $("#stop").removeClass("hidden");
+        sequence.start();
+      });
+
+      $("#stop").click(function() {
+        $(this).addClass("hidden");
+        $("#start").removeClass("hidden");
+        sequence.stop();
+      });
+
+      $("#bpm-input").change(function() {
+        Tone.Transport.bpm.value = parseInt($(this).val());
+      });
+
+      $(".pad-state").change(function() {
+        var column = $(this).data("column");
+        var row = $(this).data("row");
+        $(".pad-state").each(function(index) {
+          if ($(this).data("row") !== row && $(this).data("column") === column) {
+            $(this).prop("checked", false);
+          }
+        });
+      });
+    });
+  </script>
+  <script src="./drag-and-drop2.js"></script>
+</body>
+</html>

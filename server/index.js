@@ -33,6 +33,10 @@ app.get('/sequencer', function(req, res) {
     res.sendFile(path.join(__dirname + '/../client/sequencer.html'));
 });
 
+app.get('/beatgrid', function(req, res) {
+    res.sendFile(path.join(__dirname + '/../client/beatgrid.html'));
+});
+
 app.post('/sounds', function(req, res) {  
   var buf = Buffer.from(req.body.file, 'base64');
   
