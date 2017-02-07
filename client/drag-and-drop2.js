@@ -80,6 +80,18 @@
         Tone.context.decodeAudioData(data, function(buffer) {
           beatgridSample.buffer.set(buffer);
 
+          webAudioBeatDetector.analyze(buffer)
+            .then(function(bpm) {
+              Tone.Transport.bpm.value = bpm;
+              $("#bpm-input").val(bpm);
+            })
+            .catch(function(err) {
+
+            });
+
+          //get BPM
+          //webAudioBeatDetector.analyze...
+
           // if(
           //   window[filenames[i]] !== undefined ||
           //   filenames[i] === 'undefined' ||

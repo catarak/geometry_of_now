@@ -29,7 +29,7 @@
       <button class="start-stop" id="start">Start</button>
       <button class="start-stop hidden" id="stop">Stop</button>
       <label class="bpm-label" for="bpm-input">BPM</label>
-      <input value="120" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+      <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
     </div>
   </div>
   <script>
@@ -70,7 +70,7 @@
     var beatgridSample = new Tone.Player({
       url: "./sounds/synth_loop.wav",
       retrigger: false
-    }).sync().toMaster();
+    }).toMaster();
 
     var sampleNames = ["0", "1", "2", "3"];
     var columns = 16;
@@ -126,6 +126,7 @@
       });
     });
   </script>
+  <script src="./web-audio-bpm.min.js"></script>
   <script src="./drag-and-drop2.js"></script>
 </body>
 </html>
