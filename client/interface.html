@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Geometry of Now</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
+  <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.js"></script>
+  <script src="./StartAudioContext.js"></script>
+  <script src="./Interface.js"></script>
+  <link rel="stylesheet" href="./examples.css">
+  <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+  <section class="loops-container">
+    <div id="loop-0" class="loop drag-and-drop" data-row="0">
+      <span class="loop-name">synth_loop.wav</span>
+      <input type="number" value="100" class="loop-bpm">
+      <span class="loop-length"></span>
+      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-0"><label for="loop-beatgrid-enabled-0" class="loop-beatgrid-enabled-button">Beatgrid</label>
+      <!-- <button class="loop-send">Send to Beatgrid</button> -->
+      <!-- could have some play or pause -->
+    </div>
+  </section>
+  <section class="beatgrid" id="beatgrid">
+  </section>
+  <section class="effects">
+  </section>
+  <label class="bpm-label" for="bpm-input">BPM</label>
+  <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+  <script>
+    var gain = new Tone.Gain({
+      gain: 0.5
+    }).toMaster();
+
+    var filter = new Tone.Filter(15000, "lowpass").connect(gain);
+
+    //loops
+    var players = [];
+    var synthLoop = new Tone.GrainPlayer({
+      url: './sounds/synth_loop.wav',
+      loop: true,
+      loopStart: '0m',
+      loopEnd: '4m',
+      overlap: 0.1,
+      grainSize: 0.2,
+      retrigger: true
+    }).connect(filter);
+    players.push(synthLoop);
+
+    var sendToBeatgrid = 0; //index of player being sent to beatgrid
+    //beatgrid
+    var sequence = new Tone.Sequence(function(time, column) {
+      $(".pad-state").removeClass("current-step");
+      $(".pad-state").each(function(index) {
+        if ($(this).data("column") === column) {
+          $(this).addClass("current-step");
+          if ($(this).prop('checked') == true) {
+            var row = $(this).data('row');
+            var toneTime = new Tone.Time(time);
+            players[sendToBeatgrid].scrub(row+"*16n", time);
+            // env.triggerAttackRelease("16n - 64n", time);
+          }
+        }
+      });
+    }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "16n");
+
+    Tone.Transport.bpm.value = 100;
+
+    Tone.Buffer.on('load', function(){
+      Tone.Transport.start();
+      players.forEach(function(player) {
+        player.start();
+      });
+    });
+
+    $(function(){
+      //event handlers
+
+      $("#bpm-input").change(function() {
+        Tone.Transport.bpm.value = parseInt($(this).val());
+        players.forEach(function(player, index) {
+          player.playbackRate = Tone.Transport.bpm.value 
+          / parseFloat($('#loop-' + index + ' .loop-bpm').val());
+        });
+      });
+
+      $(".loop-bpm").change(function() {
+        var rowNumber = $(this).parent().data("row");
+        players[rowNumber].playbackRate = Tone.Transport.bpm.value 
+          / parseFloat($(this).val());
+        var sampleLengthInSeconds = players[rowNumber].buffer.duration / players[rowNumber].playbackRate;
+        var sampleLength = new Tone.Time(sampleLengthInSeconds);
+        $("#loop-" + rowNumber + " .loop-length").text(sampleLength.quantize("1m").toNotation());
+      });
+
+      $(".loop-beatgrid-enabled").change(function() {
+        if (this.checked) {
+          //enabled beatgrid
+          //stop player
+          var startBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          var quantizedStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          quantizedStartTime.quantize('1m');
+          if (startBeatgridTime.toSeconds() < quantizedStartTime.toSeconds()) {
+            quantizedStartTime.sub('1m');
+          }
+          var offset = new Tone.Time(startBeatgridTime.toSeconds() - quantizedStartTime.toSeconds());
+
+          var rowNumber = $(this).parent().data("row");
+          players[rowNumber].stop();
+          players[rowNumber].loop = false;
+          players[rowNumber].loopStart = 0;
+          players[rowNumber].loopEnd = 0;
+          sendToBeatgrid = rowNumber;
+          sequence.start(Tone.TransportTime().toSeconds(), offset.toSeconds());
+        } else {
+          //disable beatgrid
+          var stopBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          var quantizedStopTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          quantizedStopTime.quantize('1m');
+          if (stopBeatgridTime.toSeconds() < quantizedStopTime.toSeconds()) {
+            quantizedStopTime.sub('1m');
+          }
+          var offset = new Tone.Time(stopBeatgridTime.toSeconds() - quantizedStopTime.toSeconds());
+
+          var rowNumber = $(this).parent().data("row");
+          sequence.stop();
+          players[rowNumber].loop = true;
+          players[rowNumber].loopStart = 0;
+          players[rowNumber].loopEnd = '4m';
+          players[rowNumber].start(Tone.TransportTime().toSeconds(), offset.toSeconds());
+
+          //start at nearest measure divisible by loop length
+        }
+      });
+    });
+  </script>
+  <script>
+    function renderGrid(rows, columns) {
+      for (var i = 0; i < rows; i++) {
+        var rowContainer = document.createElement("div");
+        rowContainer.className = "row";
+        rowContainer.id = "row-" + i;
+        rowContainer.setAttribute("data-row", i);
+        $("#beatgrid").append($(rowContainer));
+        for (var j = 0; j < columns; j++) {
+          var button = document.createElement("input");
+          var label = document.createElement("label");
+          button.type = "checkbox";
+          button.id = "button-" + i + "-" + j;
+          button.className = "pad-state";
+          $(button).data("row", i);
+          $(button).data("column", j);
+          label.htmlFor = button.id;
+          label.className = "pad";
+          $(rowContainer).append($(button));
+          $(rowContainer).append($(label));
+        }
+      }
+    }
+
+    $(function(){
+      renderGrid(4, 16);
+
+      $(".pad-state").change(function() {
+        var column = $(this).data("column");
+        var row = $(this).data("row");
+        $(".pad-state").each(function(index) {
+          if ($(this).data("row") !== row && $(this).data("column") === column) {
+            $(this).prop("checked", false);
+          }
+        });
+      });
+    });
+  </script>
+  <script src="./web-audio-bpm.min.js"></script>
+  <script src="./drag-and-drop3.js"></script>
+</body>
+</html>
