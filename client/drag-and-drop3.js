@@ -90,8 +90,8 @@
               players[rowNumber].playbackRate = Tone.Transport.bpm.value / bpm;
               $("#loop-" + rowNumber + " .loop-bpm").val(bpm);
 
-              let sampleLengthInSeconds = players[rowNumber].buffer.duration / players[rowNumber].playbackRate;
-              let sampleLength = new Tone.Time(sampleLengthInSeconds);
+              var sampleLengthInSeconds = players[rowNumber].buffer.duration / players[rowNumber].playbackRate;
+              var sampleLength = new Tone.Time(sampleLengthInSeconds);
               $("#loop-" + rowNumber + " .loop-length").text(sampleLength.quantize("1m").toNotation());
             })
             .catch(function(err) {
