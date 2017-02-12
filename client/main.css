@@ -144,10 +144,6 @@ body {
   width: 80px;
 }
 
-.hidden {
-  display: none;
-}
-
 .loop-container {
   display: flex;
   align-items: center;
@@ -172,6 +168,8 @@ body {
   height: 30px;
   border: 2px solid #000;
   padding-left: 10px;
+  display: flex;
+  align-items: center;
 }
 
 .loop-bpm {
@@ -179,11 +177,20 @@ body {
   width: 50px;
 }
 
-.loop-beatgrid-enabled {
+.loop-beatgrid-enabled, .loop-autostart {
   display: none;
 }
 
-.loop-beatgrid-enabled-button {
+.loop-play, .loop-stop {
+  border: 2px solid black;
+  border-radius: 5px;
+  display: inline-block;
+  text-align: center;
+  background-color: white;
+  cursor: pointer;
+}
+
+.loop-beatgrid-enabled-button, .loop-autostart-button {
   border: 2px solid black;
   border-radius: 5px;
   display: inline-block;
@@ -191,11 +198,16 @@ body {
   width: 100px;
   text-align: center;
   cursor: pointer;
-  padding-top: 2px;
 }
 
-.loop-beatgrid-enabled:checked + .loop-beatgrid-enabled-button {
+.loop-beatgrid-enabled:checked + .loop-beatgrid-enabled-button,
+.loop-autostart:checked + .loop-autostart-button {
   background-color: red;
-} 
+}
+
+
+.hidden {
+  display: none;
+}
 
 

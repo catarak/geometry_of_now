@@ -20,14 +20,18 @@
       <input type="number" value="100" class="loop-bpm">
       <span class="loop-length">4m</span>
       <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-0"><label for="loop-beatgrid-enabled-0" class="loop-beatgrid-enabled-button">Beatgrid</label>
-      <!-- could have some play or pause -->
+      <button class="loop-play"><img src="./images/play.svg"/></button>
+      <button class="loop-stop hidden"><img src="./images/stop.svg"/></button>
+      <input type="checkbox" class="loop-autostart" id="loop-autostart-0"><label for="loop-autostart-0" class="loop-autostart-button">Autostart</label>
     </div>
     <div id="loop-1" class="loop drag-and-drop" data-row="1">
       <span class="loop-name">kick_loop.wav</span>
       <input type="number" value="100" class="loop-bpm">
       <span class="loop-length">4m</span>
       <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-1"><label for="loop-beatgrid-enabled-1" class="loop-beatgrid-enabled-button">Beatgrid</label>
-      <!-- could have some play or pause -->
+      <button class="loop-play"><img src="./images/play.svg"/></button>
+      <button class="loop-stop hidden"><img src="./images/stop.svg"/></button>
+      <input type="checkbox" class="loop-autostart" id="loop-autostart-1"><label for="loop-autostart-1" class="loop-autostart-button">Autostart</label>
     </div>
   </section>
   <section class="beatgrid" id="beatgrid">
@@ -41,6 +45,7 @@
     <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
   </section>
   <script>
+    var masterStartTime;
     var gain = new Tone.Gain({
       gain: 0.5
     }).toMaster();
@@ -49,7 +54,7 @@
 
     //loops
     var players = [];
-    var synthLoop = new Tone.GrainPlayer({
+    var synthLoop = new Tone.Player({
       url: './sounds/synth_loop.wav',
       loop: true,
       loopStart: '0m',
@@ -58,7 +63,7 @@
       grainSize: 0.2,
       retrigger: true
     }).connect(filter);
-    var kickLoop = new Tone.GrainPlayer({
+    var kickLoop = new Tone.Player({
       url: './sounds/kick_loop.wav',
       loop: true,
       loopStart: '0m',
@@ -88,10 +93,7 @@
     }, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], "16n");
 
     Tone.Transport.bpm.value = 100;
-
-    Tone.Buffer.on('load', function(){
-      Tone.Transport.start();
-    });
+    Tone.Transport.start();
 
     $(function(){
       //event handlers
@@ -193,11 +195,14 @@
       });
 
       $("#start").click(function() {
+        masterStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
         $(this).addClass("hidden");
         $("#stop").removeClass("hidden");
         $(".loop-beatgrid-enabled").prop("checked", false);
-        players.forEach(function(player) {
-          player.start();
+        players.forEach(function(player, index) {
+          if ($("#loop-" + index + " .loop-autostart").prop("checked")) {
+            player.start();
+          }
         });
       });
 
@@ -207,6 +212,42 @@
         players.forEach(function(player) {
           player.stop();
         });
+
+        $(".loop-stop").addClass("hidden");
+        $(".loop-play").removeClass("hidden");
+      });
+
+      $(".loop-play").click(function() {
+        var rowNumber = $(this).parent().data("row");
+        $(this).addClass("hidden");
+        $(this).siblings(".loop-stop").removeClass("hidden");
+        if ($("#stop").hasClass("hidden")) {
+          masterStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          $("#start").addClass("hidden");
+          $("#stop").removeClass("hidden");
+          players[rowNumber].start();
+        } else {
+          //figure out offset from master start time
+          var offset = new Tone.Time(Tone.TransportTime().toSeconds());
+          offset.sub(masterStartTime);
+
+          var quantizedOffset = new Tone.Time(offset.toSeconds());
+          quantizedOffset.quantize('1m');
+          if (quantizedOffset.toSeconds() < offset.toSeconds()) {
+            quantizedOffset.add('1m');
+          }
+
+          var startTime = new Tone.Time(masterStartTime.toSeconds());
+          startTime.add(quantizedOffset);
+          players[rowNumber].start(startTime);
+        }
+      });
+
+      $(".loop-stop").click(function() {
+        var rowNumber = $(this).parent().data("row");
+        $(this).addClass("hidden");
+        $(this).siblings(".loop-play").removeClass("hidden");
+        players[rowNumber].stop();
       });
     });
   </script>
