@@ -18,9 +18,15 @@
     <div id="loop-0" class="loop drag-and-drop" data-row="0">
       <span class="loop-name">synth_loop.wav</span>
       <input type="number" value="100" class="loop-bpm">
-      <span class="loop-length"></span>
+      <span class="loop-length">4m</span>
       <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-0"><label for="loop-beatgrid-enabled-0" class="loop-beatgrid-enabled-button">Beatgrid</label>
-      <!-- <button class="loop-send">Send to Beatgrid</button> -->
+      <!-- could have some play or pause -->
+    </div>
+    <div id="loop-1" class="loop drag-and-drop" data-row="1">
+      <span class="loop-name">kick_loop.wav</span>
+      <input type="number" value="100" class="loop-bpm">
+      <span class="loop-length">4m</span>
+      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-1"><label for="loop-beatgrid-enabled-1" class="loop-beatgrid-enabled-button">Beatgrid</label>
       <!-- could have some play or pause -->
     </div>
   </section>
@@ -28,8 +34,12 @@
   </section>
   <section class="effects">
   </section>
-  <label class="bpm-label" for="bpm-input">BPM</label>
-  <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+  <section class="controls">
+    <button class="start-stop" id="start">Start</button>
+    <button class="start-stop hidden" id="stop">Stop</button>
+    <label class="bpm-label" for="bpm-input">BPM</label>
+    <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+  </section>
   <script>
     var gain = new Tone.Gain({
       gain: 0.5
@@ -48,7 +58,17 @@
       grainSize: 0.2,
       retrigger: true
     }).connect(filter);
+    var kickLoop = new Tone.GrainPlayer({
+      url: './sounds/kick_loop.wav',
+      loop: true,
+      loopStart: '0m',
+      loopEnd: '4m',
+      overlap: 0.1,
+      grainSize: 0.2,
+      retrigger: true
+    }).connect(filter);
     players.push(synthLoop);
+    players.push(kickLoop);
 
     var sendToBeatgrid = 0; //index of player being sent to beatgrid
     //beatgrid
@@ -71,9 +91,6 @@
 
     Tone.Buffer.on('load', function(){
       Tone.Transport.start();
-      players.forEach(function(player) {
-        player.start();
-      });
     });
 
     $(function(){
@@ -134,6 +151,7 @@
 
           //start at nearest measure divisible by loop length
         }
+
       });
     });
   </script>
@@ -171,6 +189,23 @@
           if ($(this).data("row") !== row && $(this).data("column") === column) {
             $(this).prop("checked", false);
           }
+        });
+      });
+
+      $("#start").click(function() {
+        $(this).addClass("hidden");
+        $("#stop").removeClass("hidden");
+        $(".loop-beatgrid-enabled").prop("checked", false);
+        players.forEach(function(player) {
+          player.start();
+        });
+      });
+
+      $("#stop").click(function() {
+        $(this).addClass("hidden");
+        $("#start").removeClass("hidden");
+        players.forEach(function(player) {
+          player.stop();
         });
       });
     });
