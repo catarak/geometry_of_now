@@ -128,7 +128,6 @@
 $(function() {
   var rows = document.getElementsByClassName("loop");
   Array.prototype.forEach.call(rows, function(row) {
-    console.log('adding row event listener for ', row);
     row.addEventListener('dragover', dragOver, false);
     row.addEventListener('dragend', dragEnd, false);
     row.addEventListener('dragleave', dragLeave, false);

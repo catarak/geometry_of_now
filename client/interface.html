@@ -50,30 +50,30 @@
       gain: 0.5
     }).toMaster();
 
-    var filter = new Tone.Filter(15000, "lowpass").connect(gain);
+    // var filter = new Tone.Filter(15000, "lowpass").connect(gain);
 
     //loops
-    var players = [];
-    var synthLoop = new Tone.Player({
+    var players = new Array(2);
+    players[0] = new Tone.Player({
       url: './sounds/synth_loop.wav',
       loop: true,
       loopStart: '0m',
       loopEnd: '4m',
       overlap: 0.1,
       grainSize: 0.2,
-      retrigger: true
-    }).connect(filter);
-    var kickLoop = new Tone.Player({
+      retrigger: false
+    }).toMaster();
+    players[1] = new Tone.Player({
       url: './sounds/kick_loop.wav',
       loop: true,
       loopStart: '0m',
       loopEnd: '4m',
       overlap: 0.1,
       grainSize: 0.2,
-      retrigger: true
-    }).connect(filter);
-    players.push(synthLoop);
-    players.push(kickLoop);
+      retrigger: false
+    }).toMaster();
+    // players.push(synthLoop);
+    // players.push(kickLoop);
 
     var sendToBeatgrid = 0; //index of player being sent to beatgrid
     //beatgrid
@@ -85,7 +85,9 @@
           if ($(this).prop('checked') == true) {
             var row = $(this).data('row');
             var toneTime = new Tone.Time(time);
-            players[sendToBeatgrid].scrub(row+"*16n", time);
+            // players[sendToBeatgrid].scrub(row+"*16n", time);
+            // console.log("starting player in sequence at row", sendToBeatgrid);
+            players[sendToBeatgrid].start(time, row+"*16n", "16n");
             // env.triggerAttackRelease("16n - 64n", time);
           }
         }
@@ -94,6 +96,79 @@
 
     Tone.Transport.bpm.value = 100;
     Tone.Transport.start();
+
+    function sendLoopToBeatgrid(rowNumber) {
+      var offset = new Tone.Time(Tone.TransportTime().toSeconds());
+      offset.sub(masterStartTime);
+
+      var startTime = new Tone.Time(offset.toSeconds());
+      startTime.quantize('16n');
+      if (startTime.toSeconds() < offset.toSeconds()) {
+        startTime.add('16n');
+      }
+      startTime.add(masterStartTime);
+
+      var quantizedOffset = new Tone.Time(offset.toSeconds());
+      quantizedOffset.quantize('1m');
+      if (quantizedOffset.toSeconds() > offset.toSeconds()) {
+        quantizedOffset.sub('1m');
+      }
+      
+      var startOffset = new Tone.Time(startTime.toSeconds() - quantizedOffset.toSeconds());
+
+      players[rowNumber].stop();
+      players[rowNumber].loop = false;
+      players[rowNumber].loopStart = 0;
+      players[rowNumber].loopEnd = 0;
+      sendToBeatgrid = rowNumber;
+      sequence.start(startTime.toSeconds(), startOffset.toSeconds()); 
+    }
+
+    function syncLoopToMasterAndStart(rowNumber) {
+      var offset = new Tone.Time(Tone.TransportTime().toSeconds());
+      offset.sub(masterStartTime);
+
+      var quantizedOffset = new Tone.Time(offset.toSeconds());
+      quantizedOffset.quantize('1m');
+      if (quantizedOffset.toSeconds() < offset.toSeconds()) {
+        quantizedOffset.add('1m');
+      }
+
+      var startTime = new Tone.Time(masterStartTime.toSeconds());
+      startTime.add(quantizedOffset);
+      players[rowNumber].loop = true;
+      players[rowNumber].loopStart = 0;
+      players[rowNumber].loopEnd = '4m';
+      console.log("starting player at row", rowNumber);
+      players[rowNumber].start(startTime);
+    }
+
+    function syncLoopToMasterWithOffset(rowNumber) {
+      var stopBeatgridOffset = new Tone.Time(Tone.TransportTime().toSeconds());
+      stopBeatgridOffset.sub(masterStartTime);
+
+      var quantizedStopBeatgridOffset = new Tone.Time(stopBeatgridOffset.toSeconds());
+      quantizedStopBeatgridOffset.quantize('16n');
+      if (quantizedStopBeatgridOffset.toSeconds() < stopBeatgridOffset.toSeconds()) {
+        quantizedStopBeatgridOffset.add('16n');
+      }
+
+      var stopTime = new Tone.Time(masterStartTime.toSeconds() + quantizedStopBeatgridOffset.toSeconds());
+
+      var measureStart = new Tone.Time(stopBeatgridOffset.toSeconds());
+      measureStart.quantize('1m');
+      if (measureStart.toSeconds() > quantizedStopBeatgridOffset.toSeconds()) {
+        measureStart.sub('1m');
+      }
+
+      var offset = new Tone.Time(stopTime.toSeconds() - measureStart.toSeconds());
+
+      players[rowNumber].stop();
+      players[rowNumber].loop = true;
+      players[rowNumber].loopStart = 0;
+      players[rowNumber].loopEnd = '4m';
+      players[rowNumber].start(stopTime.toSeconds(), offset.toSeconds());
+    }
 
     $(function(){
       //event handlers
@@ -116,40 +191,43 @@
       });
 
       $(".loop-beatgrid-enabled").change(function() {
-        if (this.checked) {
-          //enabled beatgrid
-          //stop player
-          var startBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          var quantizedStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          quantizedStartTime.quantize('1m');
-          if (startBeatgridTime.toSeconds() < quantizedStartTime.toSeconds()) {
-            quantizedStartTime.sub('1m');
-          }
-          var offset = new Tone.Time(startBeatgridTime.toSeconds() - quantizedStartTime.toSeconds());
-
+        var isPlaying = $(this).siblings(".loop-play").hasClass("hidden");
+        if (this.checked && isPlaying) {
+          var beatgridsEnabled = $(".loop-beatgrid-enabled").not(this);
+          beatgridsEnabled.each(function(i) {
+            if (this.checked) {
+              $(this).prop("checked", false);
+              if ($(this).siblings(".loop-play").hasClass("hidden")) {
+                var rowNumber = $(this).parent().data("row");
+                syncLoopToMasterWithOffset(rowNumber);
+              }
+            }
+          });
           var rowNumber = $(this).parent().data("row");
-          players[rowNumber].stop();
-          players[rowNumber].loop = false;
-          players[rowNumber].loopStart = 0;
-          players[rowNumber].loopEnd = 0;
-          sendToBeatgrid = rowNumber;
-          sequence.start(Tone.TransportTime().toSeconds(), offset.toSeconds());
+          sendLoopToBeatgrid(rowNumber);
+
+          // var startBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          // var quantizedStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          // quantizedStartTime.quantize('1m');
+          // if (startBeatgridTime.toSeconds() < quantizedStartTime.toSeconds()) {
+          //   quantizedStartTime.sub('1m');
+          // }
+          // var offset = new Tone.Time(startBeatgridTime.toSeconds() - quantizedStartTime.toSeconds());
+
+          // players[rowNumber].stop();
+          // players[rowNumber].loop = false;
+          // players[rowNumber].loopStart = 0;
+          // players[rowNumber].loopEnd = 0;
+          // sendToBeatgrid = rowNumber;
+          // sequence.start(Tone.TransportTime().toSeconds(), offset.toSeconds());
         } else {
-          //disable beatgrid
-          var stopBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          var quantizedStopTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          quantizedStopTime.quantize('1m');
-          if (stopBeatgridTime.toSeconds() < quantizedStopTime.toSeconds()) {
-            quantizedStopTime.sub('1m');
-          }
-          var offset = new Tone.Time(stopBeatgridTime.toSeconds() - quantizedStopTime.toSeconds());
 
           var rowNumber = $(this).parent().data("row");
           sequence.stop();
-          players[rowNumber].loop = true;
-          players[rowNumber].loopStart = 0;
-          players[rowNumber].loopEnd = '4m';
-          players[rowNumber].start(Tone.TransportTime().toSeconds(), offset.toSeconds());
+          players[rowNumber].stop();
+          if (isPlaying) {
+            syncLoopToMasterWithOffset(rowNumber);
+          }
 
           //start at nearest measure divisible by loop length
         }
@@ -201,7 +279,10 @@
         $(".loop-beatgrid-enabled").prop("checked", false);
         players.forEach(function(player, index) {
           if ($("#loop-" + index + " .loop-autostart").prop("checked")) {
+            console.log("starting player at row", index);
             player.start();
+            $("#loop-" + index + " .loop-play").addClass("hidden");
+            $("#loop-" + index + " .loop-stop").removeClass("hidden");
           }
         });
       });
@@ -218,6 +299,7 @@
       });
 
       $(".loop-play").click(function() {
+        //check if beatgrid is enabled, if so, want to initalize beatgrid instead
         var rowNumber = $(this).parent().data("row");
         $(this).addClass("hidden");
         $(this).siblings(".loop-stop").removeClass("hidden");
@@ -225,29 +307,30 @@
           masterStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
           $("#start").addClass("hidden");
           $("#stop").removeClass("hidden");
+          players[rowNumber].loop = true;
+          players[rowNumber].loopStart = 0;
+          players[rowNumber].loopEnd = '4m';
+          console.log("starting player at row", rowNumber);
           players[rowNumber].start();
         } else {
-          //figure out offset from master start time
-          var offset = new Tone.Time(Tone.TransportTime().toSeconds());
-          offset.sub(masterStartTime);
-
-          var quantizedOffset = new Tone.Time(offset.toSeconds());
-          quantizedOffset.quantize('1m');
-          if (quantizedOffset.toSeconds() < offset.toSeconds()) {
-            quantizedOffset.add('1m');
+          if ($("#loop-" + rowNumber + " .loop-beatgrid-enabled").prop("checked")) {
+            sendLoopToBeatgrid(rowNumber);
+          } else {
+            syncLoopToMasterAndStart(rowNumber);
           }
-
-          var startTime = new Tone.Time(masterStartTime.toSeconds());
-          startTime.add(quantizedOffset);
-          players[rowNumber].start(startTime);
         }
       });
 
       $(".loop-stop").click(function() {
         var rowNumber = $(this).parent().data("row");
+        if ($("#loop-" + rowNumber + " .loop-beatgrid-enabled").prop("checked")) {
+          sequence.stop();
+          players[rowNumber].stop();
+        } else {
+          players[rowNumber].stop();
+        }
         $(this).addClass("hidden");
         $(this).siblings(".loop-play").removeClass("hidden");
-        players[rowNumber].stop();
       });
     });
   </script>
