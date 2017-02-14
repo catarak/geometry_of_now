@@ -1,3 +1,7 @@
+/* pink: #FF0063;
+sulfur-yelllow: #edff21;
+*/
+
 * {
   box-sizing: border-box;
 }
@@ -87,13 +91,13 @@ body {
 }
 
 .pad-state:checked + .pad {
-  background-color: #FF0063;
+  background-color: #edff21;
 }
 
 .pad-state.current-step:checked + .pad {
   background-image: radial-gradient(
     white,
-    #FF0063
+    #edff21
   );
 }
 
@@ -213,7 +217,8 @@ body {
 
 .loop-beatgrid-enabled:checked + .loop-beatgrid-enabled-button,
 .loop-autostart:checked + .loop-autostart-button {
-  background-color: #FF0063;
+  background-color: #edff21;
+  color: black;
 }
 
 .loop-info {
