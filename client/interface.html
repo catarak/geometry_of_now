@@ -58,6 +58,13 @@
   <script>
     var masterStartTime;
     var sampleNode = new Tone.Gain().toMaster();
+    var rows = 4;
+    var columns = 16;
+
+    var socket = io();
+    socket.on("initialize", function(data) {
+      loadGrids(data.grids);
+    });
 
     //loops
     var players = new Array(2);
@@ -117,7 +124,6 @@
     Tone.Transport.start();
 
     function sendLoopToBeatgrid(rowNumber) {
-      debugger;
       var offset = new Tone.Time(Tone.TransportTime().toSeconds());
       offset.sub(masterStartTime);
 
@@ -285,6 +291,27 @@
       }
     }
 
+    function serializeGrid(rows, columns) {
+      var grid = new Array(rows).fill();
+      grid = grid.map(row => new Array(columns));
+      $(".pad-state").each(function() {
+        var row = parseInt($(this).data("row"));
+        var column = parseInt($(this).data("column"));
+        grid[row][column] = $(this).prop("checked");
+      });
+      return grid;
+    }
+
+    function loadGrids(grids) {
+      //eventually will have multiple grids
+      var grid = grids[0];
+      for (var i = 0; i < rows; i++) {
+        for (var j = 0; j < columns; j++) {
+          $("#button-" + i + "-" + j).prop("checked", grid[i][j]);
+        }
+      }
+    }
+
     $(function(){
       renderGrid(4, 16);
 
@@ -296,6 +323,12 @@
             $(this).prop("checked", false);
           }
         });
+        var grid = serializeGrid(rows, columns);
+        var data = {
+          index: 0,
+          grid: grid
+        };
+        socket.emit("beatgrid", data);
       });
 
       $("#start").click(function() {

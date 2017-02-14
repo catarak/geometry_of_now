@@ -31,7 +31,7 @@ var client = new Twitter({
   access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
 });
 
-var word = require('./database.json').word;
+var database = require('./database.json');
 var stream;
 var calm;
 
@@ -48,7 +48,7 @@ function createNewStream(word) {
   });
 }
 
-createNewStream(word);
+createNewStream(database.word);
 
 app.get('/', function(req, res) {
     res.sendFile(path.join(__dirname + '/../client/index.html'));
@@ -75,9 +75,7 @@ app.get('/admin', function(req, res) {
 });
 
 app.post('/search', function(req, res) {
-  var db = {
-    "word": req.body.searchTerm
-  };
+  database.word = req.body.searchTerm;
   io.emit('clear');
   stream.on('end', function (response) {
     setTimeout(function () {
@@ -85,7 +83,7 @@ app.post('/search', function(req, res) {
     }, 1000 * calm);
   });
   stream.destroy();
-  fs.writeFile('./server/database.json', JSON.stringify(db, null, 2));
+  fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
   res.json({success: true});
 });
 
@@ -99,7 +97,20 @@ app.post('/sounds', function(req, res) {
 });
 
 io.on('connection', function(socket){
-  console.log('a user connected');
+  io.emit("initialize", database);
+  socket.on("beatgrid", function(data) {
+    //write to json file.
+    if (database.grids === undefined) {
+      database.grids = [];
+      var newGrid = data.grid;
+      database.grids.push(newGrid);
+      fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
+    } else {
+      var newGrid = data.grid;
+      database.grids[data.index] = newGrid;
+      fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
+    }
+  });
 });
 server.listen(3001);
 
