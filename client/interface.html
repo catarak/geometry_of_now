@@ -67,12 +67,15 @@
     var columns = 16;
     var currentGridIndex = 0;
     var grids;
+    var samples;
     var MAX_GRIDS = 8;
 
     var socket = io();
     socket.on("initialize", function(data) {
       grids = data.grids;
+      samples = data.samples;
       loadGrid(data.grids, currentGridIndex);
+      loadLoops(data.samples);
     });
 
     //loops
@@ -218,12 +221,20 @@
       });
 
       $(".loop-bpm").change(function() {
-        var rowNumber = $(this).parent().data("row");
+        var rowNumber = $(this).closest(".loop").data("row");
+        var bpm = parseFloat($(this).val());
         players[rowNumber].playbackRate = Tone.Transport.bpm.value 
-          / parseFloat($(this).val());
+          / bpm;
         var sampleLengthInSeconds = players[rowNumber].buffer.duration / players[rowNumber].playbackRate;
         var sampleLength = new Tone.Time(sampleLengthInSeconds);
         $("#loop-" + rowNumber + " .loop-length").text(sampleLength.quantize("1m").toNotation());
+
+        samples[rowNumber].bpm = bpm;
+        var data = {
+          index: rowNumber,
+          sample: samples[rowNumber]
+        };
+        socket.emit("sample", data);
       });
 
       $(".loop-beatgrid-enabled").change(function() {
@@ -314,6 +325,19 @@
           $("#button-" + i + "-" + j).prop("checked", grid[i][j]);
         }
       }
+    }
+
+    function loadLoops(samples) {
+      samples.forEach(function(sample, index) {
+        players[index].load(sample.url, function() {
+          $("#loop-" + index + " .loop-name").text(sample.name);
+          players[index].playbackRate = Tone.Transport.bpm.value / sample.bpm;
+          $("#loop-" + index + " .loop-bpm").val(sample.bpm);
+          var sampleLengthInSeconds = players[index].buffer.duration / players[index].playbackRate;
+          var sampleLength = new Tone.Time(sampleLengthInSeconds);
+          $("#loop-" + index + " .loop-length").text(sampleLength.quantize("1m").toNotation());
+        });
+      });
     }
 
     $(function(){

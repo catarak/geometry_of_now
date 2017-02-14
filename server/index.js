@@ -103,13 +103,22 @@ io.on('connection', function(socket){
     if (database.grids === undefined) {
       database.grids = [];
       var newGrid = data.grid;
-      database.grids.push(newGrid);
+      database.grids[data.index] = newGrid;
       fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
     } else {
       var newGrid = data.grid;
       database.grids[data.index] = newGrid;
       fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
     }
+  });
+
+
+  socket.on("sample", function(data) {
+    if (database.samples === undefined) {
+      database.samples = [];
+    }
+    database.samples[data.index] = data.sample;
+    fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
   });
 });
 server.listen(3001);

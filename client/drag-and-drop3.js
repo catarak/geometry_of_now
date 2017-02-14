@@ -93,6 +93,18 @@
               var sampleLengthInSeconds = players[rowNumber].buffer.duration / players[rowNumber].playbackRate;
               var sampleLength = new Tone.Time(sampleLengthInSeconds);
               $("#loop-" + rowNumber + " .loop-length").text(sampleLength.quantize("1m").toNotation());
+            
+              var newSample = {
+                url: './sounds/' + item.name,
+                name: item.name,
+                bpm: bpm
+              };
+              samples[rowNumber] = newSample;
+              var data = {
+                index: rowNumber,
+                sample: newSample
+              };
+              socket.emit("sample", data);
             })
             .catch(function(err) {
 
