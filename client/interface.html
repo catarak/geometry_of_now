@@ -117,6 +117,7 @@
     Tone.Transport.start();
 
     function sendLoopToBeatgrid(rowNumber) {
+      debugger;
       var offset = new Tone.Time(Tone.TransportTime().toSeconds());
       offset.sub(masterStartTime);
 
@@ -133,13 +134,14 @@
         quantizedOffset.sub('1m');
       }
       
-      var startOffset = new Tone.Time(startTime.toSeconds() - quantizedOffset.toSeconds());
+      var startOffset = new Tone.Time(startTime.toSeconds() - (quantizedOffset.toSeconds() + masterStartTime.toSeconds()));
 
       players[rowNumber].stop();
       players[rowNumber].loop = false;
       players[rowNumber].loopStart = 0;
       players[rowNumber].loopEnd = 0;
       sendToBeatgrid = rowNumber;
+      sequence.start(startTime.toSeconds(), startOffset.toSeconds()); 
       sequence.start(startTime.toSeconds(), startOffset.toSeconds()); 
     }
 
@@ -180,7 +182,7 @@
         measureStart.sub('1m');
       }
 
-      var offset = new Tone.Time(stopTime.toSeconds() - measureStart.toSeconds());
+      var offset = new Tone.Time(stopTime.toSeconds() - (measureStart.toSeconds() + masterStartTime.toSeconds()));
 
       players[rowNumber].stop();
       players[rowNumber].loop = true;
@@ -334,7 +336,6 @@
           players[rowNumber].loop = true;
           players[rowNumber].loopStart = 0;
           players[rowNumber].loopEnd = '4m';
-          console.log("starting player at row", rowNumber);
           players[rowNumber].start();
         } else {
           if ($("#loop-" + rowNumber + " .loop-beatgrid-enabled").prop("checked")) {
