@@ -309,7 +309,7 @@
 
     function loadGrid(grids, index) {
       var grid;
-      if (index >= grids.length) {
+      if (index >= grids.length || grids[index] === null) {
         grid = new Array(rows).fill();
         grid = grid.map(row => new Array(columns));
         for (var i = 0; i < rows; i++) {
