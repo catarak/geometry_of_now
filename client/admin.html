@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Geometry of Now</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <form id="admin-form">
+    <label for="search-term">Search Term</label>
+    <input type="text" id="search-term" name="searchTerm"/>
+    <input type="submit"/>
+  </form>
+
+  <script>
+    $(function() {
+      $("#admin-form").submit(function(e) {
+        e.preventDefault();
+        $.post('/search', $(this).serializeArray(), function(response) {
+          console.log('success!');
+          $("#search-term").val("");
+        });
+      });
+    });
+  </script>
+  
+</body>
+</html>

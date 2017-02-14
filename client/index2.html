@@ -42,6 +42,9 @@
       $(newP).text(tweet)
       $("#tweets").append($(newP));
     });
+    socket.on("clear", function() {
+      $("#tweets").empty();
+    });
 
     //Samples
 
