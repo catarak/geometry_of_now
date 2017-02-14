@@ -205,6 +205,12 @@ body {
   font-size: 0.8em;
 }
 
+@media screen and (min-width: 420px) {
+  .loop-beatgrid-enabled-button, .loop-autostart-button {
+    width: 100px;
+  }
+}
+
 .loop-beatgrid-enabled:checked + .loop-beatgrid-enabled-button,
 .loop-autostart:checked + .loop-autostart-button {
   background-color: #FF0063;
@@ -217,6 +223,12 @@ body {
   flex-wrap: wrap;
   align-items: center;
   padding: 0 5px;
+}
+
+@media screen and (min-width: 420px) {
+  .loop-info {
+    width: 100px;
+  }
 }
 
 .loop-bpm-label {
