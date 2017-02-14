@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Geometry of Now</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.js"></script>
+  <script src="./range-touch.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.min.js"></script>
   <script src="https://npmcdn.com/draggabilly@2.1/dist/draggabilly.pkgd.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/0.9.0/Tone.js"></script>
@@ -12,45 +13,51 @@
   <script src="./Interface.js"></script>
   <link rel="stylesheet" href="./examples.css">
   <link rel="stylesheet" href="./main.css">
+  <link rel="stylesheet" href="./interface.css">
 </head>
 <body>
   <section class="loops-container">
     <div id="loop-0" class="loop drag-and-drop" data-row="0">
-      <span class="loop-name">synth_loop.wav</span>
-      <input type="number" value="100" class="loop-bpm">
-      <span class="loop-length">4m</span>
-      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-0"><label for="loop-beatgrid-enabled-0" class="loop-beatgrid-enabled-button">Beatgrid</label>
+      <div class="loop-left">
+        <span class="loop-name">synth_loop.wav</span>
+        <div class="loop-info">
+          <input type="number" value="100" class="loop-bpm"><label class="loop-bpm-label">BPM</label>
+          <span class="loop-length">4m</span>
+        </div>
+      </div>
       <button class="loop-play"><img src="./images/play.svg"/></button>
       <button class="loop-stop hidden"><img src="./images/stop.svg"/></button>
+      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-0"><label for="loop-beatgrid-enabled-0" class="loop-beatgrid-enabled-button">Beatgrid</label>
       <input type="checkbox" class="loop-autostart" id="loop-autostart-0"><label for="loop-autostart-0" class="loop-autostart-button">Autostart</label>
     </div>
     <div id="loop-1" class="loop drag-and-drop" data-row="1">
-      <span class="loop-name">kick_loop.wav</span>
-      <input type="number" value="100" class="loop-bpm">
-      <span class="loop-length">4m</span>
-      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-1"><label for="loop-beatgrid-enabled-1" class="loop-beatgrid-enabled-button">Beatgrid</label>
+      <div class="loop-left">
+        <span class="loop-name">kick_loop.wav</span>
+        <div class="loop-info">
+          <input type="number" value="100" class="loop-bpm"><label class="loop-bpm-label">BPM</label>
+          <span class="loop-length">4m</span>
+        </div>
+      </div>
       <button class="loop-play"><img src="./images/play.svg"/></button>
       <button class="loop-stop hidden"><img src="./images/stop.svg"/></button>
+      <input type="checkbox" class="loop-beatgrid-enabled" id="loop-beatgrid-enabled-1"><label for="loop-beatgrid-enabled-1" class="loop-beatgrid-enabled-button">Beatgrid</label>
       <input type="checkbox" class="loop-autostart" id="loop-autostart-1"><label for="loop-autostart-1" class="loop-autostart-button">Autostart</label>
     </div>
   </section>
   <section class="beatgrid" id="beatgrid">
   </section>
   <section class="effects">
+    <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateReverb(value)">
   </section>
   <section class="controls">
     <button class="start-stop" id="start">Start</button>
     <button class="start-stop hidden" id="stop">Stop</button>
-    <label class="bpm-label" for="bpm-input">BPM</label>
     <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
+    <label class="bpm-label" for="bpm-input">BPM</label>
   </section>
   <script>
     var masterStartTime;
-    var gain = new Tone.Gain({
-      gain: 0.5
-    }).toMaster();
-
-    // var filter = new Tone.Filter(15000, "lowpass").connect(gain);
+    var sampleNode = new Tone.Gain().toMaster();
 
     //loops
     var players = new Array(2);
@@ -62,7 +69,7 @@
       overlap: 0.1,
       grainSize: 0.2,
       retrigger: false
-    }).toMaster();
+    }).connect(sampleNode);
     players[1] = new Tone.Player({
       url: './sounds/kick_loop.wav',
       loop: true,
@@ -71,9 +78,21 @@
       overlap: 0.1,
       grainSize: 0.2,
       retrigger: false
-    }).toMaster();
-    // players.push(synthLoop);
-    // players.push(kickLoop);
+    }).connect(sampleNode);
+
+    //effects
+    var reverbSend = sampleNode.send("reverb", -Infinity);
+    var reverb = new Tone.Freeverb(0.9, 4000)
+      .receive("reverb")
+      .toMaster();
+
+    function updateReverb(value) {
+      //map value from -100 to 0, logarithmicly
+      var adjustedValue = parseInt(value) + 100;
+      var reverbValue = 100*(Math.log(1+adjustedValue)/Math.log(101)) - 100;
+      console.log(reverbValue);
+      reverbSend.gain.value = reverbValue;
+    }
 
     var sendToBeatgrid = 0; //index of player being sent to beatgrid
     //beatgrid
