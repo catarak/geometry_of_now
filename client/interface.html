@@ -298,7 +298,9 @@
 
     function serializeGrid(rows, columns) {
       var grid = new Array(rows).fill();
-      grid = grid.map(row => new Array(columns));
+      grid = grid.map(function(row) {
+        return new Array(columns);
+      });
       $(".pad-state").each(function() {
         var row = parseInt($(this).data("row"));
         var column = parseInt($(this).data("column"));
@@ -311,7 +313,9 @@
       var grid;
       if (index >= grids.length || grids[index] === null) {
         grid = new Array(rows).fill();
-        grid = grid.map(row => new Array(columns));
+        grid = grid.map(function(row) {
+          return new Array(columns);
+        });
         for (var i = 0; i < rows; i++) {
           for (var j = 0; j < columns; j++) {
             grid[i][j] = false;
