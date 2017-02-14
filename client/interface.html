@@ -46,6 +46,11 @@
   </section>
   <section class="beatgrid" id="beatgrid">
   </section>
+  <section class="beatgrid-controls" id="beatgrid-controls">
+    <button class="beatgrid-controls-button" id="beatgrid-controls-sub"><</button>
+    <span class="beatgrid-controls-index" id="beatgrid-controls-index">0</span>
+    <button class="beatgrid-controls-button" id="beatgrid-controls-add">></button>
+  </section>
   <section class="effects">
     <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateReverb(value)">
   </section>
@@ -60,10 +65,14 @@
     var sampleNode = new Tone.Gain().toMaster();
     var rows = 4;
     var columns = 16;
+    var currentGridIndex = 0;
+    var grids;
+    var MAX_GRIDS = 8;
 
     var socket = io();
     socket.on("initialize", function(data) {
-      loadGrids(data.grids);
+      grids = data.grids;
+      loadGrid(data.grids, currentGridIndex);
     });
 
     //loops
@@ -237,21 +246,6 @@
           } else {
             sequence.stop();
           }
-
-          // var startBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          // var quantizedStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
-          // quantizedStartTime.quantize('1m');
-          // if (startBeatgridTime.toSeconds() < quantizedStartTime.toSeconds()) {
-          //   quantizedStartTime.sub('1m');
-          // }
-          // var offset = new Tone.Time(startBeatgridTime.toSeconds() - quantizedStartTime.toSeconds());
-
-          // players[rowNumber].stop();
-          // players[rowNumber].loop = false;
-          // players[rowNumber].loopStart = 0;
-          // players[rowNumber].loopEnd = 0;
-          // sendToBeatgrid = rowNumber;
-          // sequence.start(Tone.TransportTime().toSeconds(), offset.toSeconds());
         } else {
 
           var rowNumber = $(this).parent().data("row");
@@ -302,9 +296,19 @@
       return grid;
     }
 
-    function loadGrids(grids) {
-      //eventually will have multiple grids
-      var grid = grids[0];
+    function loadGrid(grids, index) {
+      var grid;
+      if (index >= grids.length) {
+        grid = new Array(rows).fill();
+        grid = grid.map(row => new Array(columns));
+        for (var i = 0; i < rows; i++) {
+          for (var j = 0; j < columns; j++) {
+            grid[i][j] = false;
+          }
+        } grids[index] = grid;
+      } else {
+        grid = grids[index];
+      }
       for (var i = 0; i < rows; i++) {
         for (var j = 0; j < columns; j++) {
           $("#button-" + i + "-" + j).prop("checked", grid[i][j]);
@@ -324,8 +328,9 @@
           }
         });
         var grid = serializeGrid(rows, columns);
+        grids[currentGridIndex] = grid;
         var data = {
-          index: 0,
+          index: currentGridIndex,
           grid: grid
         };
         socket.emit("beatgrid", data);
@@ -389,6 +394,22 @@
         }
         $(this).addClass("hidden");
         $(this).siblings(".loop-play").removeClass("hidden");
+      });
+
+      $("#beatgrid-controls-sub").click(function() {
+        if (currentGridIndex > 0) {
+          currentGridIndex -= 1;
+          loadGrid(grids, currentGridIndex);
+          $("#beatgrid-controls-index").text(currentGridIndex);
+        }
+      });
+
+      $("#beatgrid-controls-add").click(function() {
+        if (currentGridIndex < MAX_GRIDS) {
+          currentGridIndex += 1;
+          loadGrid(grids, currentGridIndex);
+          $("#beatgrid-controls-index").text(currentGridIndex);
+        }
       });
     });
   </script>
