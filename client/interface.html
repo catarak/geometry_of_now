@@ -192,19 +192,24 @@
 
       $(".loop-beatgrid-enabled").change(function() {
         var isPlaying = $(this).siblings(".loop-play").hasClass("hidden");
-        if (this.checked && isPlaying) {
+        if (this.checked) {
           var beatgridsEnabled = $(".loop-beatgrid-enabled").not(this);
           beatgridsEnabled.each(function(i) {
             if (this.checked) {
               $(this).prop("checked", false);
               if ($(this).siblings(".loop-play").hasClass("hidden")) {
                 var rowNumber = $(this).parent().data("row");
+                players[rowNumber].stop();
                 syncLoopToMasterWithOffset(rowNumber);
               }
             }
           });
           var rowNumber = $(this).parent().data("row");
-          sendLoopToBeatgrid(rowNumber);
+          if (isPlaying) {
+            sendLoopToBeatgrid(rowNumber);
+          } else {
+            sequence.stop();
+          }
 
           // var startBeatgridTime = new Tone.Time(Tone.TransportTime().toSeconds());
           // var quantizedStartTime = new Tone.Time(Tone.TransportTime().toSeconds());
