@@ -51,12 +51,13 @@
     <span class="beatgrid-controls-index" id="beatgrid-controls-index">0</span>
     <button class="beatgrid-controls-button" id="beatgrid-controls-add">></button>
   </section>
-  <section class="effects">
+  <!-- <section class="effects">
     <input class="effect-param" type="range" min="-100" max="0" value="-100" oninput="updateReverb(value)">
-  </section>
+  </section> -->
   <section class="controls">
     <button class="start-stop" id="start">Start</button>
     <button class="start-stop hidden" id="stop">Stop</button>
+    <input type="checkbox" class="twitter-button-state" id="twitter-button"><label for="twitter-button" class="twitter-button">Twitter</label>
     <input value="100" type="number" id="bpm-input" class="bpm-input" min="30" max="250">
     <label class="bpm-label" for="bpm-input">BPM</label>
   </section>
@@ -77,8 +78,96 @@
       loadGrid(data.grids, currentGridIndex);
       loadLoops(data.samples);
     });
+    //twitter stuff
+    var frequency = 0;
+    var numSamples = 0;
+    var lastSampleTime = 0;
+    var lastSampleChange = 0;
+    var inBeatgrid = false;
+    var twitterEnabled = false;
+    socket.on("tweet", function(tweet) {
+      if (twitterEnabled) {
+        if (numSamples === 0) {
+          numSamples += 1;
+          lastSampleTime = Tone.TransportTime().toSeconds();
+        } else {
+          var currentTime = Tone.TransportTime().toSeconds();
+          var deltaTime = currentTime - lastSampleTime;
+          numSamples += 1;
+          if (frequency === 0) {
+            frequency = 1/(deltaTime/(numSamples - 1));
+          } else {
+            frequency = 1/((deltaTime + (1/frequency) * (numSamples - 2))/ (numSamples- 1));
+          }
+          lastSampleTime = currentTime;
+          console.log(frequency);
+        }
 
-    //loops
+        //on a sample, turn on the beatgrid, 
+        //every few samples, switch the beatgrid number, based on the frequency.
+        //based on the frequency, how long the beatgrid stays on
+
+        //play if not already playing
+        //turn on beatgrid
+        if (!inBeatgrid) {
+          inBeatgrid = true;
+          $("#loop-0 .loop-play").trigger('click');
+          $("#loop-0 .loop-beatgrid-enabled").prop('checked', true);
+          $("#loop-0 .loop-beatgrid-enabled").trigger('change');
+
+          var event = new Tone.Event(function(time) {
+            $("#loop-0 .loop-beatgrid-enabled").prop('checked', false);
+            $("#loop-0 .loop-beatgrid-enabled").trigger('change');
+            inBeatgrid = false;
+          });
+
+          var startTime = new Tone.Time(Tone.TransportTime().toSeconds());
+          startTime.add('1m');
+          event.start(startTime);
+        }
+
+        if (Math.log(numSamples - lastSampleChange) > 4) {
+          currentGridIndex = Math.floor(Math.random() * 8);
+          onChangeCurrentGridIndex();
+          lastSampleChange = numSamples;
+        }
+
+        //after some amount of time turn off beatgrid
+        //some measures
+
+        //if already playing
+        //based on frequency, after certain number of samples switch beatgrid
+      }
+    });
+    socket.on("clear", function() {
+      frequency = 0;
+      numSamples = 0;
+      lastSampleChange = 0;
+    });
+
+    var envelopes = [];
+
+    var env1 = new Tone.AmplitudeEnvelope({
+      "attack": 0.01,
+      "decay": 0,
+      "sustain": 1,
+      "release": 0.01
+    }).toMaster();
+    env1.attackCurve  = "exponential";
+    env1.releaseCurve  = "exponential";
+
+    var env2 = new Tone.AmplitudeEnvelope({
+      "attack": 0.01,
+      "decay": 0,
+      "sustain": 1,
+      "release": 0.01 
+    }).toMaster();
+    env2.attackCurve  = "exponential";
+    env2.releaseCurve  = "exponential";
+    envelopes.push(env1);
+    envelopes.push(env2);
+
+
     var players = new Array(2);
     players[0] = new Tone.Player({
       url: './sounds/synth_loop.wav',
@@ -88,7 +177,7 @@
       overlap: 0.1,
       grainSize: 0.2,
       retrigger: false
-    }).connect(sampleNode);
+    }).connect(envelopes[0]);
     players[1] = new Tone.Player({
       url: './sounds/kick_loop.wav',
       loop: true,
@@ -97,7 +186,7 @@
       overlap: 0.1,
       grainSize: 0.2,
       retrigger: false
-    }).connect(sampleNode);
+    }).connect(envelopes[1]);
 
     //effects
     var reverbSend = sampleNode.send("reverb", -Infinity);
@@ -126,7 +215,7 @@
             // players[sendToBeatgrid].scrub(row+"*16n", time);
             // console.log("starting player in sequence at row", sendToBeatgrid);
             players[sendToBeatgrid].start(time, row+"*16n", "16n");
-            // env.triggerAttackRelease("16n - 64n", time);
+            envelopes[sendToBeatgrid].triggerAttackRelease("16n", time);
           }
         }
       });
@@ -160,7 +249,6 @@
       players[rowNumber].loopEnd = 0;
       sendToBeatgrid = rowNumber;
       sequence.start(startTime.toSeconds(), startOffset.toSeconds()); 
-      sequence.start(startTime.toSeconds(), startOffset.toSeconds()); 
     }
 
     function syncLoopToMasterAndStart(rowNumber) {
@@ -177,9 +265,10 @@
       startTime.add(quantizedOffset);
       players[rowNumber].loop = true;
       players[rowNumber].loopStart = 0;
-      players[rowNumber].loopEnd = '4m';
+      players[rowNumber].loopEnd = samples[rowNumber].length;
       console.log("starting player at row", rowNumber);
       players[rowNumber].start(startTime);
+      envelopes[rowNumber].triggerAttack(startTime);
     }
 
     function syncLoopToMasterWithOffset(rowNumber) {
@@ -205,8 +294,9 @@
       players[rowNumber].stop();
       players[rowNumber].loop = true;
       players[rowNumber].loopStart = 0;
-      players[rowNumber].loopEnd = '4m';
+      players[rowNumber].loopEnd = samples[rowNumber].length;
       players[rowNumber].start(stopTime.toSeconds(), offset.toSeconds());
+      envelopes[rowNumber].triggerAttack(stopTime);
     }
 
     $(function(){
@@ -340,8 +430,14 @@
           var sampleLengthInSeconds = players[index].buffer.duration / players[index].playbackRate;
           var sampleLength = new Tone.Time(sampleLengthInSeconds);
           $("#loop-" + index + " .loop-length").text(sampleLength.quantize("1m").toNotation());
+          players[index].loopEnd = sample.length;
         });
       });
+    }
+
+    function onChangeCurrentGridIndex() {
+      loadGrid(grids, currentGridIndex);
+      $("#beatgrid-controls-index").text(currentGridIndex);
     }
 
     $(function(){
@@ -373,6 +469,7 @@
           if ($("#loop-" + index + " .loop-autostart").prop("checked")) {
             console.log("starting player at row", index);
             player.start();
+            envelopes[index].triggerAttack();
             $("#loop-" + index + " .loop-play").addClass("hidden");
             $("#loop-" + index + " .loop-stop").removeClass("hidden");
           }
@@ -401,8 +498,9 @@
           $("#stop").removeClass("hidden");
           players[rowNumber].loop = true;
           players[rowNumber].loopStart = 0;
-          players[rowNumber].loopEnd = '4m';
+          players[rowNumber].loopEnd = samples[rowNumber].length;
           players[rowNumber].start();
+          envelopes[rowNumber].triggerAttack();
         } else {
           if ($("#loop-" + rowNumber + " .loop-beatgrid-enabled").prop("checked")) {
             sendLoopToBeatgrid(rowNumber);
@@ -437,6 +535,14 @@
           currentGridIndex += 1;
           loadGrid(grids, currentGridIndex);
           $("#beatgrid-controls-index").text(currentGridIndex);
+        }
+      });
+
+      $("#twitter-button").change(function() {
+        if (this.checked) {
+          twitterEnabled = true;
+        } else {
+          twitterEnabled = false;
         }
       });
     });

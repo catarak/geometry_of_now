@@ -46,6 +46,12 @@ function createNewStream(word) {
       calm++;
     }
   });
+
+  stream.on('end', function (response) {
+    setTimeout(function () {
+      createNewStream(database.word);
+    }, 1000 * calm);
+  });
 }
 
 createNewStream(database.word);
@@ -76,12 +82,7 @@ app.get('/admin', function(req, res) {
 
 app.post('/search', function(req, res) {
   database.word = req.body.searchTerm;
-  io.emit('clear');
-  stream.on('end', function (response) {
-    setTimeout(function () {
-      createNewStream(req.body.searchTerm);
-    }, 1000 * calm);
-  });
+  io.emit('clear', database.word);
   stream.destroy();
   fs.writeFile('./server/database.json', JSON.stringify(database, null, 2));
   res.json({success: true});

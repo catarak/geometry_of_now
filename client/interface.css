@@ -202,7 +202,7 @@ body {
   width: 50px;
 }
 
-.loop-beatgrid-enabled-button, .loop-autostart-button {
+.loop-beatgrid-enabled-button,.loop-autostart-button {
   border: 2px solid white;
   border-radius: 5px;
   display: inline-block;
@@ -221,8 +221,23 @@ body {
   }
 }
 
+.twitter-button-state {
+  display: none;
+}
+
+.twitter-button {
+  border: 2px solid white;
+  border-radius: 5px;
+  display: inline-block;
+  cursor: pointer;
+  text-transform: uppercase;
+  padding: 20px;
+  font-size: 1.2em;
+}
+
 .loop-beatgrid-enabled:checked + .loop-beatgrid-enabled-button,
-.loop-autostart:checked + .loop-autostart-button {
+.loop-autostart:checked + .loop-autostart-button,
+.twitter-button-state:checked + .twitter-button {
   background-color: #edff21;
   color: black;
 }
